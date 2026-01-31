@@ -1,0 +1,28 @@
+# Node.js/Next.js
+node_modules/
+dist/
+build/
+*.log
+.env*
+.next/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
+
+# Universal
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
+# Windows reserved / temp
+nul
+NUL
+temp-test/

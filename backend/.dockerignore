@@ -1,0 +1,14 @@
+# Docker-specific ignores for Python/FastAPI backend
+__pycache__/
+.venv/
+venv/
+*.pyc
+*.log*
+.env*
+.git/
+.gitignore
+Dockerfile*
+.dockerignore
+.vscode/
+coverage/
+dist/

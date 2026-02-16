@@ -25,7 +25,7 @@ async def refresh_token(refresh_token: str):
         
         # Check if the refresh token is expired
         exp = payload.get("exp")
-        if exp and datetime.utcnow().timestamp() > exp:
+        if exp and datetime.now().timestamp() > exp:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Refresh token expired"
@@ -63,7 +63,7 @@ async def refresh_token(refresh_token: str):
         # Revoke the old refresh token (if using token rotation)
         if jti:
             revoked_tokens[jti] = {
-                "revoked_at": datetime.utcnow().isoformat(),
+                "revoked_at": datetime.now().isoformat(),
                 "reason": "token_rotation"
             }
         
@@ -89,7 +89,7 @@ async def revoke_token(refresh_token: str):
         
         # Store the revoked token
         revoked_tokens[jti] = {
-            "revoked_at": datetime.utcnow().isoformat(),
+            "revoked_at": datetime.now().isoformat(),
             "reason": "user_logout"
         }
         

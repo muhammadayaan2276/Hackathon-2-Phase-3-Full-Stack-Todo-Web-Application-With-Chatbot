@@ -77,8 +77,8 @@ class TaskDB(SQLModel, table=True):
     description: Optional[str] = Field(default=None, max_length=1000)
     completed: bool = False
     user_id: str = Field(max_length=255)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 # User model for authentication
 class UserBase(PydanticBaseModel):
@@ -101,7 +101,7 @@ class UserDB(SQLModel, table=True):
     id: str = Field(primary_key=True)
     email: str = Field(unique=True, max_length=255)
     password_hash: str = Field(max_length=255)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=datetime.now)
 
 # Dependency for database session
 async def get_session():
@@ -115,9 +115,9 @@ security = HTTPBearer()
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -306,7 +306,7 @@ async def update_todo(todo_id: str, task_data: TaskUpdate, current_user: UserDB 
     if task_data.completed is not None:
         task.completed = task_data.completed
 
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now()
 
     await session.commit()
     await session.refresh(task)
@@ -347,7 +347,7 @@ async def toggle_todo(todo_id: str, current_user: UserDB = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.completed = not task.completed
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now()
 
     await session.commit()
     await session.refresh(task)

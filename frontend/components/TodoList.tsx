@@ -142,13 +142,18 @@ export default function TodoList() {
               </p>
             )}
             <p className="text-xs text-gray-400 mt-2">
-              Created: {new Date(todo.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              Created: {(() => {
+                // Force UTC interpretation - assume backend sends UTC timestamps
+                const utcDate = new Date(todo.created_at + 'Z');
+                return utcDate.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: true
+                });
+              })()}
             </p>
           </div>
 

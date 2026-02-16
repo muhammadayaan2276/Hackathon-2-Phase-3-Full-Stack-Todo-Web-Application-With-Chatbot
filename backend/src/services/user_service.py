@@ -37,8 +37,8 @@ async def create_user(session: Session, user_create: UserCreate):
     user = User(
         email=user_create.email,
         name=getattr(user_create, 'name', ''),
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
         email_verified=False,  # In a real app, this would be verified via email
         hashed_password=hashed_password
     )

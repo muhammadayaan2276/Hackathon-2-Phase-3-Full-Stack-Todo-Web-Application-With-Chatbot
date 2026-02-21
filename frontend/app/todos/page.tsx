@@ -5,6 +5,7 @@ import TodoList from '@/components/TodoList';
 import AddTaskModal from '@/components/AddTaskModal';
 import { isAuthenticated, removeAuthToken } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import ChatBot from '@/components/ChatBot';
 
 export default function TodosPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -79,6 +80,9 @@ export default function TodosPage() {
         onClose={() => setIsAddModalOpen(false)}
         onTaskCreated={handleTaskCreated}
       />
+
+      {/* ChatBot - Only appears when authenticated */}
+      <ChatBot />
     </div>
   );
 }

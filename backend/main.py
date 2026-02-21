@@ -5,7 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession as SQLAlchemyAsyncSession
 from typing import Optional, List, Dict, Any
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 from pydantic import BaseModel as PydanticBaseModel
 import os
@@ -77,8 +77,8 @@ class TaskDB(SQLModel, table=True):
     description: Optional[str] = Field(default=None, max_length=1000)
     completed: bool = False
     user_id: str = Field(max_length=255)
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 # User model for authentication
 class UserBase(PydanticBaseModel):
@@ -101,7 +101,8 @@ class UserDB(SQLModel, table=True):
     id: str = Field(primary_key=True)
     email: str = Field(unique=True, max_length=255)
     password_hash: str = Field(max_length=255)
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 # Dependency for database session
 async def get_session():
@@ -115,9 +116,9 @@ security = HTTPBearer()
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -126,8 +127,14 @@ def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta]
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
-# Hash password
+# Hash password - with bcrypt 72-byte limit handling
 def get_password_hash(password: str) -> str:
+    # bcrypt has a hard limit of 72 bytes (not characters)
+    # Truncate if password exceeds 72 bytes when encoded as UTF-8
+    password_bytes = password.encode('utf-8')
+    if len(password_bytes) > 72:
+        # Truncate to 72 bytes and decode back to string
+        password = password_bytes[:72].decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 # Get current user from token
@@ -306,7 +313,7 @@ async def update_todo(todo_id: str, task_data: TaskUpdate, current_user: UserDB 
     if task_data.completed is not None:
         task.completed = task_data.completed
 
-    task.updated_at = datetime.now()
+    task.updated_at = datetime.utcnow()
 
     await session.commit()
     await session.refresh(task)
@@ -347,7 +354,7 @@ async def toggle_todo(todo_id: str, current_user: UserDB = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.completed = not task.completed
-    task.updated_at = datetime.now()
+    task.updated_at = datetime.utcnow()
 
     await session.commit()
     await session.refresh(task)
@@ -361,3 +368,81 @@ async def toggle_todo(todo_id: str, current_user: UserDB = Depends(get_current_u
         created_at=task.created_at,
         updated_at=task.updated_at
     )
+
+
+# CHAT ENDPOINT USING OPENROUTER + AGENT SDK (IN-MEMORY CONTEXT)
+from agents import Agent, Runner
+from agents.extensions.models.litellm_model import LitellmModel
+import os
+import json
+from typing import Dict
+
+@app.post("/api/chat", response_model=Dict[str, str])
+async def chat(
+    message_request: Dict[str, str],
+    current_user: UserDB = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session)
+):
+    """
+    Chat endpoint using OpenRouter + openai-agents SDK.
+    Uses in-memory context — no DB tables required.
+    """
+    user_message = message_request.get("message", "").strip()
+    if not user_message:
+        raise HTTPException(status_code=400, detail="Message is required")
+
+    # Fetch user's todos
+    stmt = select(TaskDB).where(TaskDB.user_id == current_user.id)
+    result = await session.execute(stmt)
+    todos = result.scalars().all()
+
+    # Format todos for agent context
+    todos_list = [{
+        "id": str(t.id),
+        "title": t.title,
+        "description": t.description,
+        "completed": t.completed,
+        "created_at": t.created_at.isoformat(),
+        "updated_at": t.updated_at.isoformat()
+    } for t in todos]
+
+    # Hardcoded greetings & identity responses
+    lower_msg = user_message.lower().strip()
+    if lower_msg in ["hello", "hey", "hi"]:
+        return {"response": "Hello! How can I help with your todos?"}
+    if "who are you" in lower_msg or "what are you" in lower_msg or "are you a bot" in lower_msg:
+        return {"response": "I am a todo assistant. I can help you with your todos."}
+    if ("hello" in lower_msg or "hey" in lower_msg) and ("who are you" in lower_msg or "what are you" in lower_msg):
+        return {"response": "Hello! I am a todo assistant. I can help you with your todos."}
+
+    # Build prompt
+    todos_json = json.dumps(todos_list, indent=2)
+    prompt = f"""You are a helpful todo assistant.
+The user has the following todos (JSON):
+{todos_json}
+
+User question: "{user_message}"
+
+Answer concisely and only based on the todos above. If unrelated, say: "I can only answer questions about your todos."""
+
+    # Initialize agent
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="OPENROUTER_API_KEY not set in .env"
+        )
+
+    model = LitellmModel(model="openrouter/auto", api_key=api_key)
+    agent = Agent(
+        name="TodoAssistant",
+        instructions="Answer only based on the user's todos. Be concise.",
+        model=model
+    )
+
+    # ✅ Use in-memory context — NO DB tables needed
+    try:
+        result = await Runner.run(agent, prompt, context={"todos": todos_list})
+        return {"response": result.final_output.strip()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent error: {str(e)}")

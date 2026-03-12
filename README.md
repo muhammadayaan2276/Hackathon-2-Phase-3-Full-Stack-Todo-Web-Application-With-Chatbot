@@ -1,217 +1,154 @@
-# Todo Full-Stack Web Application
+# 🤖 Todo Chatbot - Full Stack Web Application (Hackathon Phase 3)
 
-A modern, secure todo application built with Next.js (frontend) and FastAPI (backend), featuring JWT authentication and PostgreSQL database.
+A full-stack **Todo Management Web Application** with a **Chatbot Assistant** that provides insights about a user's todos.
+Built using **Next.js, FastAPI, PostgreSQL, and Tailwind CSS**.
 
-## Features
+---
 
-- ✅ **User Authentication**: Secure signup and login with JWT tokens
-- 📝 **Task Management**: Create, read, update, delete, and toggle tasks
-- 🔒 **Security**: JWT-based authentication with user isolation
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile
-- 🎨 **Modern UI**: Clean interface built with Tailwind CSS
-- 🚀 **Fast Backend**: Python FastAPI with async support
-- 💾 **Database**: PostgreSQL (Neon Serverless)
+## 🚀 Features
 
-## Tech Stack
+### 📝 Todo Management
 
-### Frontend
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **State Management**: React Hooks
+* Create new todos
+* View all todos
+* Update existing todos
+* Delete todos
+* Mark todos as completed
+
+### 🔐 Authentication
+
+* User Signup & Login
+* JWT-based authentication
+* Protected routes
+
+### 🤖 Chatbot Assistant
+
+The chatbot **does not create or modify todos**.
+Instead, it provides **information and insights about the user's existing todos**.
+
+Examples:
+
+* Total number of todos created
+* Completed vs pending todos
+* Information about the user's tasks
+
+The chatbot fetches this data through the backend API.
+
+### 📱 Responsive UI
+
+* Built with **Next.js**
+* Styled using **Tailwind CSS**
+
+---
+
+## 🛠 Tech Stack
+
+**Frontend**
+
+* Next.js
+* TypeScript
+* Tailwind CSS
+
+**Backend**
+
+* FastAPI
+* Python
+* SQLAlchemy
+
+**Database**
+
+* PostgreSQL
+
+---
+
+## 📂 Project Structure
+
+```
+project-root
+│
+├── backend
+│   └── src
+│       ├── api
+│       ├── models
+│       ├── schemas
+│       └── main.py
+│
+├── frontend
+│   ├── app
+│   ├── components
+│   └── lib
+│
+└── README.md
+```
+
+---
+
+## ⚙️ Setup
 
 ### Backend
-- **Framework**: FastAPI (Python)
-- **Database**: PostgreSQL with SQLModel ORM
-- **Authentication**: JWT (JSON Web Tokens)
-- **Password Hashing**: bcrypt
 
-## Project Structure
-
-```
-.
-├── frontend/                 # Next.js frontend application
-│   ├── app/                 # Next.js app router pages
-│   │   ├── login/          # Login page
-│   │   ├── signup/         # Signup page
-│   │   ├── todos/          # Todo management page
-│   │   └── page.tsx        # Home/landing page
-│   ├── components/         # React components
-│   │   ├── TodoList.tsx    # Todo list component
-│   │   ├── AddTaskModal.tsx # Add task modal
-│   │   └── EditTaskModal.tsx # Edit task modal
-│   └── lib/                # Utility functions
-│       ├── api.ts          # API client
-│       └── auth.ts         # Authentication utilities
-│
-└── backend/                 # FastAPI backend application
-    ├── main.py             # Main application file
-    ├── requirements.txt    # Python dependencies
-    └── .env                # Environment variables
-
-```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- Python 3.9+
-- PostgreSQL database (or use Neon Serverless)
-
-### Backend Setup
-
-1. Navigate to the backend directory:
 ```bash
 cd backend
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
 pip install -r requirements.txt
+uvicorn src.main:app --reload
 ```
 
-4. Configure environment variables in `.env`:
-```env
-DATABASE_URL=postgresql+asyncpg://user:password@host/database
-BETTER_AUTH_SECRET=your-secret-key-here
+Backend runs on:
+
+```
+http://localhost:8000
 ```
 
-5. Start the backend server:
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+### Frontend
 
-The backend will be available at `http://localhost:8000`
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
-
-3. Create `.env.local` file:
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-4. Start the development server:
-```bash
 npm run dev
 ```
 
-The frontend will be available at `http://localhost:3000`
+Frontend runs on:
 
-## API Endpoints
+```
+http://localhost:3000
+```
+
+---
+
+## 🔗 API Endpoints
 
 ### Authentication
-- `POST /api/auth/signup` - Create new user account
-- `POST /api/auth/signin` - Login with credentials
 
-### Todos (Protected)
-- `GET /api/todos` - Get all todos for authenticated user
-- `POST /api/todos` - Create a new todo
-- `GET /api/todos/{id}` - Get specific todo
-- `PUT /api/todos/{id}` - Update todo
-- `DELETE /api/todos/{id}` - Delete todo
-- `PUT /api/todos/{id}/toggle` - Toggle todo completion status
-
-## Usage
-
-1. **Sign Up**: Create a new account on the signup page
-2. **Login**: Sign in with your credentials
-3. **Add Tasks**: Click "Add New Task" to create todos
-4. **Manage Tasks**:
-   - Click the checkbox to mark tasks as complete
-   - Click the delete icon to remove tasks
-5. **Logout**: Click the logout button to end your session
-
-## Security Features
-
-- JWT token-based authentication
-- Password hashing with bcrypt
-- User isolation (users can only access their own tasks)
-- CORS protection
-- Secure token storage
-
-## Development
-
-### Running Tests
-
-Backend:
-```bash
-cd backend
-pytest
+```
+POST /signup
+POST /login
 ```
 
-Frontend:
-```bash
-cd frontend
-npm test
+### Todos
+
+```
+GET /todos
+POST /todos
+PUT /todos/{id}
+DELETE /todos/{id}
 ```
 
-### Building for Production
+### Chatbot
 
-Frontend:
-```bash
-cd frontend
-npm run build
-npm start
+```
+POST /chat
 ```
 
-Backend:
-```bash
-cd backend
-uvicorn main:app --host 0.0.0.0 --port 8000
-```
+The `/chat` endpoint allows the chatbot to **retrieve information about the user's todos** and respond with useful insights.
 
-## Environment Variables
+---
 
-### Backend (.env)
-- `DATABASE_URL`: PostgreSQL connection string
-- `BETTER_AUTH_SECRET`: Secret key for JWT signing
+## 👨‍💻 Author
 
-### Frontend (.env.local)
-- `NEXT_PUBLIC_API_URL`: Backend API URL
+**Ayaan Zeeshan**
+Computer Science Student | Full Stack Developer
+Learning **Next.js, FastAPI, and AI integrations**
 
-## Troubleshooting
+---
 
-### CORS Issues
-Make sure the backend CORS middleware includes your frontend URL:
-```python
-allow_origins=["http://localhost:3000"]
-```
-
-### Database Connection
-Verify your DATABASE_URL is correct and the database is accessible.
-
-### JWT Token Issues
-Ensure BETTER_AUTH_SECRET is the same value in both frontend and backend configurations.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions, please open an issue on GitHub.
+⭐ If you like this project, consider giving it a **star on GitHub**.
